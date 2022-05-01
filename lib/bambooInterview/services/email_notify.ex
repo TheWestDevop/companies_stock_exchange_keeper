@@ -1,15 +1,16 @@
 defmodule BambooInterview.Services.EmailNotifyer do
   alias BambooInterview.Simulator.Users
   alias BambooInterview.TaskManager
-  alias BambooInterview.Scheduler.CompaniesChecker
+  alias Phoenix.PubSub
+
 
 
   import Bamboo.Email
    
 
-  @topic :companies_checker
+  @topic "companies_checker"
+  @pubsub BambooInterview.PubSub
   @event :send_new_company_notification
-  
 
   def start_link(_args) do
     # you may want to register your server with `name: __MODULE__`
@@ -19,6 +20,7 @@ defmodule BambooInterview.Services.EmailNotifyer do
 
   @impl true
   def init(_args) do
+    subscribe_to_event()
     {:ok, :initial_state}
   end
 
@@ -29,28 +31,43 @@ defmodule BambooInterview.Services.EmailNotifyer do
   end
 
   @impl true
-  def handle_info({CompaniesChecker, @event, company_details}, state) do
+  def handle_info({@topic, @event, company_details}, state) do
     notify_subscribers(company_details)
     {:noreply, state}
   end
 
   defp notify_subscribers(company_details) do
-    Users.find_users_by_category(company_details[:category])
+    Users.find_users_by_category(company_details.category)
     |> Stream.uniq()
     |> Enum.to_list()
-    |> Enum.each(&TaskManager.execute_sliently(fn -> process_email_notification(&1, company_details) end))
+    |> Enum.each(&TaskManager.execute_sliently(fn -> 
+      process_email_notification(&1, company_details) 
+      publish_web_socket_event(&1, company_details)
+        end)
+      )
   end
 
-  defp process_email_notification(user, _company_details) do
-    IO.inspect("Sending email notification to #{user["email"]}")
-    # new_email(
-    #   from: {"Invest Bamboo", "oyeniyiadedayo@gmail.com"},
-    #   to: user[:email],
-    #   subject: "New Company Added to Stock Market",
-    #   text_body:
-    #     "Hi #{user[:name]},\n\nA new company has been added to the stock .\n\nCompany Name: #{company_details[:name]}\nCompany Symbol: #{company_details[:symbol]}\nStock Category: #{company_details[:category]}\n\nRegards,\nInvest Bamboo"
-    # )
+  defp process_email_notification(user, company_details) do
+    
+    new_email(
+      from: {"Invest Bamboo", "oyeniyiadedayo@gmail.com"},
+      to: user.email,
+      subject: "New Company Added to Stock Market",
+      text_body:
+        "Hi #{user.name},\n\nA new company has been added to the stock .\n\nCompany Name: #{company_details.longName}\nCompany Symbol: #{company_details.symbol}\nStock Category: #{company_details.category}\n\nRegards,\nInvest Bamboo"
+    )
   end
 
+
+  defp publish_web_socket_event(user, company_details) do
+    BambooInterviewWeb.Endpoint.broadcast("user_notification", "notify_#{user.id}", %{
+      "message" =>"Hi #{user.name}, #{company_details.longName} added to stock market"
+    })
+  end
+  
+  defp subscribe_to_event() do
+    PubSub.subscribe(@pubsub, @topic)
+    :ok
+  end
   
 end

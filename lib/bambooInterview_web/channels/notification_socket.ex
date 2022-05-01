@@ -1,23 +1,29 @@
 defmodule BambooInterviewWeb.NotificationChannel do
   alias BambooInterview.Simulator.Users
   alias BambooInterview.TaskManager
-  alias BambooInterview.Scheduler.CompaniesChecker
+  alias Phoenix.PubSub
+
 
   use BambooInterviewWeb, :channel
 
+  @pubsub BambooInterview.PubSub
+  @topic "companies_checker"
   @event :send_new_company_notification
+
   def join("join_notification_channel", _param, socket) do
+     subscribe_to_event()
     {:ok, %{"notification" => []}, socket}
   end
 
   def handle_info(
         {
-          CompaniesChecker,
+          @topic,
           @event,
           company_details
         },
         socket
       ) do
+        
    IO.inspect("Sending notification to subscribed users...")
     
     Users.find_users_by_category(company_details["category"])
@@ -27,6 +33,11 @@ defmodule BambooInterviewWeb.NotificationChannel do
       "message" => "Hi #{&1["name"]}, #{company_details["name"]} added to stock market"
     })end))
     {:noreply, socket}
+  end
+
+  defp subscribe_to_event() do
+    PubSub.subscribe(@pubsub, @topic)
+    :ok
   end
 
 end

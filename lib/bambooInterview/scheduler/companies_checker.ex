@@ -7,7 +7,7 @@ defmodule BambooInterview.Scheduler.CompaniesChecker do
   alias BambooInterview.CacheManager
   alias Phoenix.PubSub
 
-  @topic inspect(__MODULE__)
+  @topic "companies_checker"
   @event :send_new_company_notification
   @pubsub BambooInterview.PubSub
 
@@ -17,14 +17,12 @@ defmodule BambooInterview.Scheduler.CompaniesChecker do
 
   def init(state) do
     # Schedule work to be performed at some point
-    subscribe_to_event()
-
     ping_the_process()
     {:ok, state}
   end
 
   def handle_info(:check_for_new_companies, state) do
-    IO.inspect("Checking for new companies...")
+    IO.inspect("Checking for new company stock profile...")
 
     # Do company check here
     check_for_new_companies()
@@ -35,7 +33,7 @@ defmodule BambooInterview.Scheduler.CompaniesChecker do
   end
 
   defp ping_the_process() do
-    # # Periodically ping with atom :check_for_new_companies this process In every 30 minutes
+    # # Periodically ping with atom :check_for_new_companies this process In every half a minutes
     Process.send_after(self(), :check_for_new_companies, 30  * 1000)
 
     # In 1 minutes for development stage
@@ -71,16 +69,15 @@ defmodule BambooInterview.Scheduler.CompaniesChecker do
     :ok
   end
 
-  defp subscribe_to_event() do
-    PubSub.subscribe(@pubsub, @topic)
+  
+  @spec publish_event() :: 
+  defp publish_event({:ok, result}, @event) do
+    CacheManager.save(result.symbol, result)
+    PubSub.broadcast(@pubsub, @topic, {@topic, @event, result})
     :ok
   end
 
-  defp publish_event({:ok, result}, @event) do
-    IO.inspect("Publishing event: #{@event}")
-    CacheManager.save(result.symbol, result)
-    PubSub.broadcast(@pubsub, @topic, {@topic, @event, result})
-  end
-
   defp publish_event({:error, reason}, @event), do: {:error, reason}
+
+
 end
