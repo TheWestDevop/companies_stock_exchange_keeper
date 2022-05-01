@@ -1,4 +1,4 @@
-# BambooInterview
+# Periodical Companies_stock_exchange_keeper
 
 To start your Phoenix server:
 
