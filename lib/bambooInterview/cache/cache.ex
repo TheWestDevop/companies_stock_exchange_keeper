@@ -7,6 +7,23 @@ defmodule BambooInterview.CacheManager do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
 
+    ## Client API
+  
+    @spec get(String.t()) :: any() | nil
+    def get(key) do
+      GenServer.call(__MODULE__, {:get, key})
+    end
+    
+    @spec delete(String.t()) :: atom()
+    def delete(key) do
+      GenServer.cast(__MODULE__, {:delete, key})
+    end
+    
+    @spec save(String.t(), any()) :: atom()
+    def save(key, value) do
+      GenServer.cast(__MODULE__, {:save, key, value})
+    end
+
   ## Server API
 
   @impl true
@@ -47,32 +64,24 @@ defmodule BambooInterview.CacheManager do
     :ok
   end
 
-  ## Client API
 
-  def get(key) do
-    GenServer.call(__MODULE__, {:get, key})
-  end
-
-  def delete(key) do
-    GenServer.cast(__MODULE__, {:delete, key})
-  end
-
-  def save(key, value) do
-    GenServer.cast(__MODULE__, {:save, key, value})
-  end
 
   # Helper Function  
+
+  @spec delete_previous_cache(String.t()) :: atom()
   defp delete_previous_cache(key) do
     :ets.delete(:cache, key)
   end
-
+ 
+  @spec on_cache!(String.t()) :: boolean()
   defp on_cache!(key) do
     case :ets.lookup(:cache, key) do
       [] -> false
       [{_ , _value}] -> true
     end
   end
-
+  
+  @spec cache(String.t(), any()) :: atom()
   defp cache(key, value) do
     case on_cache!(key) do
       true ->

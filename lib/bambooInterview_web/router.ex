@@ -5,8 +5,12 @@ defmodule BambooInterviewWeb.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/api", BambooInterviewWeb do
+  scope "/api/v1", BambooInterviewWeb do
     pipe_through :api
+    
+    get("/companies", CompanyController, :index)
+
+  
   end
 
   # Enables LiveDashboard only for development

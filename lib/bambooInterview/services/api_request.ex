@@ -33,7 +33,9 @@ defmodule BambooInterview.Services.APIRequest do
     :ok
   end
 
-  
+   
+  # Simulate http endpoint to query for latest added companies
+  @spec check_for_new_update() :: [ map() ]
   defp check_for_new_update(), do: Stocks.simulate_stock_data_api_request()
 
 end

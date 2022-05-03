@@ -25,7 +25,7 @@ defmodule BambooInterview.Services.EmailNotifyer do
   end
 
   @impl true
-  def terminate(reason, state) do
+  def terminate(reason, _state) do
     IO.puts("Email notify_subscribers server terminated because of #{inspect(reason)}")
     :ok
   end
@@ -35,7 +35,8 @@ defmodule BambooInterview.Services.EmailNotifyer do
     notify_subscribers(company_details)
     {:noreply, state}
   end
-
+  
+  @spec notify_subscribers(map()) :: {atom(), atom()}
   defp notify_subscribers(company_details) do
     Users.find_users_by_category(company_details.category)
     |> Stream.uniq()
@@ -47,6 +48,7 @@ defmodule BambooInterview.Services.EmailNotifyer do
       )
   end
 
+  @spec process_email_notification(map(), map()) :: any()
   defp process_email_notification(user, company_details) do
     
     new_email(
@@ -56,15 +58,17 @@ defmodule BambooInterview.Services.EmailNotifyer do
       text_body:
         "Hi #{user.name},\n\nA new company has been added to the stock .\n\nCompany Name: #{company_details.longName}\nCompany Symbol: #{company_details.symbol}\nStock Category: #{company_details.category}\n\nRegards,\nInvest Bamboo"
     )
+    IO.inspect("Email Sent for #{user.email}")
   end
 
-
+  @spec publish_web_socket_event(map(), map()) :: any()
   defp publish_web_socket_event(user, company_details) do
     BambooInterviewWeb.Endpoint.broadcast("user_notification", "notify_#{user.id}", %{
       "message" =>"Hi #{user.name}, #{company_details.longName} added to stock market"
     })
   end
   
+  @spec subscribe_to_event() :: atom()
   defp subscribe_to_event() do
     PubSub.subscribe(@pubsub, @topic)
     :ok

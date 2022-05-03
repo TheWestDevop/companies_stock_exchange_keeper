@@ -37,6 +37,20 @@ defmodule BambooInterview.Companies do
   """
   def get_profile!(id), do: Repo.get!(Profile, id)
 
+  def get_companies_by_date(start_date, end_date) do
+    {:ok, start_date} = NaiveDateTime.new(start_date, ~T[00:00:53])
+    {:ok, end_date} = NaiveDateTime.new(end_date, ~T[23:00:00])
+
+    query =
+      from(a in Profile,
+        where:
+          a.inserted_at >= ^start_date and
+            a.inserted_at <= ^end_date
+      )
+
+    Repo.all(query)
+  end
+
   @doc """
   Creates a profile.
 
@@ -50,13 +64,14 @@ defmodule BambooInterview.Companies do
 
   """
   def create_profile(attrs \\ %{}) do
-    case is_company_exist?(attrs["longName"]) do
-      true -> 
-          {:error, "company already exist"}
-      false ->   
-           %Profile{}
-           |> Profile.changeset(attrs)
-           |> Repo.insert()
+    case is_company_exist?(attrs["shortName"]) do
+      true ->
+        {:error, "company already exist"}
+
+      false ->
+        %Profile{}
+        |> Profile.changeset(attrs)
+        |> Repo.insert()
     end
   end
 
@@ -106,13 +121,14 @@ defmodule BambooInterview.Companies do
   def change_profile(%Profile{} = profile, attrs \\ %{}) do
     Profile.changeset(profile, attrs)
   end
-  
-  defp is_company_exist?(company_longName) do
+
+  @spec is_company_exist?(String.t()) :: boolean()
+  defp is_company_exist?(key) do
     query =
       from(a in Profile,
-        where: a.longName == ^company_longName
+        where: a.shortName == ^key
       )
+
     Repo.exists?(query)
   end
-
 end

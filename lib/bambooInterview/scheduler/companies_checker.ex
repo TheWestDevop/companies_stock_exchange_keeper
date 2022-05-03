@@ -17,7 +17,7 @@ defmodule BambooInterview.Scheduler.CompaniesChecker do
 
   def init(state) do
     # Schedule work to be performed at some point
-    ping_the_process()
+    ping_process()
     {:ok, state}
   end
 
@@ -28,18 +28,17 @@ defmodule BambooInterview.Scheduler.CompaniesChecker do
     check_for_new_companies()
 
     # Reschedule once more
-    ping_the_process()
+    ping_process()
     {:noreply, state}
   end
 
-  defp ping_the_process() do
-    # # Periodically ping with atom :check_for_new_companies this process In every half a minutes
+  defp ping_process() do
+    # # Periodically ping with atom :check_for_new_companies this process In every 30 minutes
     Process.send_after(self(), :check_for_new_companies, 30  * 1000)
-
-    # In 1 minutes for development stage
-    # Process.send_after(self(), :check_for_new_companies, 60 * 1000)
   end
 
+  
+  @spec check_for_new_companies() :: String.t()
   defp check_for_new_companies do
     # Get all new companies from the http endpoint
     case APIRequest.get_new_companies() do
@@ -48,6 +47,7 @@ defmodule BambooInterview.Scheduler.CompaniesChecker do
     end
   end
   
+  @spec process_data(list(map())) :: atom()
   defp process_data(companies) do
     if !Enum.empty?(companies) do
       companies
@@ -55,14 +55,16 @@ defmodule BambooInterview.Scheduler.CompaniesChecker do
       |> Enum.to_list()
       |> Enum.each(&process_each_company_record_into_DB(&1))
     end
+    :ok
   end
-
+  
+  @spec process_each_company_record_into_DB(map()) ::atom()
   defp process_each_company_record_into_DB(company) do
     TaskManager.execute_sliently(fn ->
       case CacheManager.get(company["symbol"]) do
         nil ->
            Companies.create_profile(company)
-           |> publish_event(@event)
+           |> publish_event()
         _ -> :ok
       end
     end)
@@ -70,14 +72,16 @@ defmodule BambooInterview.Scheduler.CompaniesChecker do
   end
 
   
-  @spec publish_event() :: 
-  defp publish_event({:ok, result}, @event) do
+  @spec publish_event({:ok, map()}) :: atom()
+  defp publish_event({:ok, result}) do
     CacheManager.save(result.symbol, result)
     PubSub.broadcast(@pubsub, @topic, {@topic, @event, result})
     :ok
   end
 
-  defp publish_event({:error, reason}, @event), do: {:error, reason}
+
+  @spec publish_event({:error, any()}) :: {:error, any()}
+  defp publish_event({:error, reason}), do: {:error, reason}
 
 
 end
