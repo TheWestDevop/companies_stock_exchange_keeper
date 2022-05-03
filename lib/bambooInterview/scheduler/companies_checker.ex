@@ -8,7 +8,10 @@ defmodule BambooInterview.Scheduler.CompaniesChecker do
   alias Phoenix.PubSub
 
   @topic "companies_checker"
+  @topic2 "companies_info"
   @event :send_new_company_notification
+  @second_event_simulation :companies_details
+
   @pubsub BambooInterview.PubSub
 
   def start_link(_opts) do
@@ -22,7 +25,7 @@ defmodule BambooInterview.Scheduler.CompaniesChecker do
   end
 
   def handle_info(:check_for_new_companies, state) do
-    IO.inspect("Checking for new company stock profile...")
+    IO.inspect("Checking for new listed companies ...")
 
     # Do company check here
     check_for_new_companies()
@@ -75,11 +78,16 @@ defmodule BambooInterview.Scheduler.CompaniesChecker do
   @spec publish_event({:ok, map()}) :: atom()
   defp publish_event({:ok, result}) do
     CacheManager.save(result.symbol, result)
+
+    #Publish event to email & web-socket notification
     PubSub.broadcast(@pubsub, @topic, {@topic, @event, result})
+
+    #Publish event to companies information simulator listener
+    PubSub.broadcast(@pubsub, @topic2, {@topic2, @second_event_simulation, result})
     :ok
   end
 
-
+  
   @spec publish_event({:error, any()}) :: {:error, any()}
   defp publish_event({:error, reason}), do: {:error, reason}
 

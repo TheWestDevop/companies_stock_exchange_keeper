@@ -32,6 +32,7 @@ defmodule BambooInterview.Services.EmailNotifyer do
 
   @impl true
   def handle_info({@topic, @event, company_details}, state) do
+   IO.inspect("Sending update email to category subscribed users...")
     notify_subscribers(company_details)
     {:noreply, state}
   end
@@ -52,13 +53,13 @@ defmodule BambooInterview.Services.EmailNotifyer do
   defp process_email_notification(user, company_details) do
     
     new_email(
-      from: {"Invest Bamboo", "oyeniyiadedayo@gmail.com"},
+      from: {"Invest Bamboo", "contact@epp.healthcare"},
       to: user.email,
       subject: "New Company Added to Stock Market",
       text_body:
         "Hi #{user.name},\n\nA new company has been added to the stock .\n\nCompany Name: #{company_details.longName}\nCompany Symbol: #{company_details.symbol}\nStock Category: #{company_details.category}\n\nRegards,\nInvest Bamboo"
     )
-    IO.inspect("Email Sent for #{user.email}")
+    IO.inspect("Email Sent to #{user.email}")
   end
 
   @spec publish_web_socket_event(map(), map()) :: any()

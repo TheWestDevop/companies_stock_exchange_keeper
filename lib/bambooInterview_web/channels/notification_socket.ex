@@ -24,7 +24,7 @@ defmodule BambooInterviewWeb.NotificationChannel do
         socket
       ) do
         
-   IO.inspect("Sending notification to subscribed users...")
+   IO.inspect("Sending notification to category subscribed users...")
     
     Users.find_users_by_category(company_details["category"])
     |> Stream.uniq()

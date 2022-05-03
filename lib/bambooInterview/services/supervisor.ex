@@ -11,8 +11,11 @@ defmodule BambooInterview.Services.Supervisor do
             %{
                 id: BambooInterview.Services.EmailNotifyer,
                 start: {BambooInterview.Services.EmailNotifyer, :start_link, [%{}]}
-              },
-
+            },
+            %{
+                id: BambooInterview.Services.InformationPubSub,
+                start: {BambooInterview.Services.InformationPubSub, :start_link, [%{}]}
+            }
         ]
         Supervisor.init(children, strategy: :one_for_one)
     end

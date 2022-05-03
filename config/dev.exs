@@ -28,7 +28,7 @@ config :bambooInterview, BambooInterview.Services.Mailer,
   hostname: "epp.healthcare",
   port: 465,
   username: "contact@epp.healthcare", 
-  password: "HcRXge9uYw14", 
+  password: "", 
   tls: :never, # optional, tls verification function
   ssl: true, 
   retries: 1,

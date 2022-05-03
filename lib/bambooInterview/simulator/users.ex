@@ -10,7 +10,7 @@ defmodule  BambooInterview.Simulator.Users  do
     @spec users_data() :: [map()] | []
     defp users_data() do
         [
-            %{id: 1, name: "John", email: "techbitme1@gmail.com", category: "Technology"},
+            %{id: 1, name: "John", email: "techbitme@gmail.com", category: "Technology"},
             %{id: 2, name: "Jane", email: "techbitme2@gmail.com", category: "Technology"},
             %{id: 3, name: "Jack", email: "techbitme3@gmail.com", category: "Technology"},
             %{id: 4, name: "Jill", email: "techbitme4@gmail.com", category: "Technology"},
